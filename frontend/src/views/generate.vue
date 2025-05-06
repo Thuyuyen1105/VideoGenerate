@@ -1,344 +1,121 @@
 <template>
-  <div class="app-container">
-    <!-- Header/Navigation - Full Width -->
-    <div class="header-wrapper">
-      <header class="header">
-        <div class="logo-container">
-          <div class="logo">
-            <div class="logo-icon">
-              <a href="/" style="text-decoration: none; color: inherit;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-                </svg>
-              </a>
-            </div>
-            <span class="logo-text">VideoGenerator</span>
+  <DefaultLayout>
+    <div class="app-container">
+      <!-- Main Content -->
+      <main class="main-content">
+        <div class="video-generator-container">
+          <!-- Media Upload Section -->
+          <div class="media-controls">
+            <button class="media-button">Upload media</button>
+            <button class="media-button">Clip picker</button>
           </div>
-          <nav class="main-nav">
-          </nav>
-        </div>
-        <div class="auth-container">
-          <div class="language-selector" @click="toggleLanguageMenu">
-            <span>{{ selectedLanguage }}</span>
-            <span class="flag">
-              <img
-                :src="selectedLanguage === 'English' ? 'https://flagcdn.com/w20/us.png' : 'https://flagcdn.com/w20/vn.png'"
-                :alt="selectedLanguage + ' Flag'"
-              />
-            </span>
-            <div class="language-menu" v-if="isLanguageMenuOpen">
-              <div class="language-option" @click="selectLanguage('English')">
-                <img src="https://flagcdn.com/w20/us.png" alt="US Flag" />
-                <span>English</span>
+
+          <!-- Text Input Area -->
+          <div class="text-input-container">
+            <textarea class="text-input" rows="5" placeholder="Enter your script here..." v-model="outputScript"></textarea>
+          </div>
+
+          <!-- Controls Section -->
+          <div class="controls-section">
+            <div class="dropdown-controls">
+              <div class="dropdown-control">
+                <select class="control-select">
+                  <option>Style</option>
+                  <option>Professional</option>
+                  <option>Casual</option>
+                  <option>Energetic</option>
+                </select>
               </div>
-              <div class="language-option" @click="selectLanguage('Tiếng Việt')">
-                <img src="https://flagcdn.com/w20/vn.png" alt="VN Flag" />
-                <span>Tiếng Việt</span>
+            </div>
+
+            <div class="checkbox-controls">
+              <label class="checkbox-control">
+                <input type="checkbox" /> Landscape (16:9)
+              </label>
+              <label class="checkbox-control">
+                <input type="checkbox" /> Video Style
+              </label>
+            </div>
+
+            <button class="preview-button">Preview images</button>
+          </div>
+
+          <!-- Image Grid -->
+          <div class="image-grid">
+            <div class="image-item" v-for="(image, index) in generatedImages" :key="index">
+              <img :src="image.url" alt="Generated Image" class="generated-image" />
+              <div class="image-controls">
+                <button class="regenerate-button">Regenerate</button>
+                <button class="edit-button" @click="goToImageEditor(image.url)">Edit</button>
+              </div>
+              <div class="text-input-container">
+                <textarea class="text-input" rows="5" v-model="outputScript"></textarea>
               </div>
             </div>
           </div>
 
-
-          <!-- User Profile (Logged In) -->
-          <div class="user-profile" @click="toggleUserMenu">
-            <div class="user-avatar">
-              <span class="user-initial">{{ userInitial }}</span>
+          <!-- Navigation -->
+          <div class="navigation-controls">
+            <div class="navigation-arrow" @click="prevImage">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
             </div>
-            <div class="user-menu" v-if="isUserMenuOpen">
-              <div class="user-menu-header">
-                <span class="user-name">{{ user.name }}</span>
-                <span class="user-email">{{ user.email }}</span>
-              </div>
-              <div class="user-menu-divider"></div>
-              <ul class="user-menu-items">
-                <li class="user-menu-item">
-                  <a href="/setting" style="text-decoration: none; color: inherit;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    <span>My Account</span>
-                  </a>
-                </li>
-                <li class="user-menu-item">
-                  <a href="/analytics" style="text-decoration: none; color: inherit;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                      <line x1="16" y1="13" x2="8" y2="13"></line>
-                      <line x1="16" y1="17" x2="8" y2="17"></line>
-                      <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                    <span>Statistics</span>
-                  </a>
-                </li>
-                <li class="user-menu-item" @click="logout">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                  </svg>
-                  <span>Log Out</span>
-                </li>
-              </ul>
+
+            <div class="navigation-dots">
+              <span v-for="(image, index) in generatedImages" :key="index" :class="{'active': currentIndex === index}" @click="setImageIndex(index)"></span>
+            </div>
+
+            <div class="navigation-arrow" @click="nextImage">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
             </div>
           </div>
+
+          <!-- Generate Button -->
+          <div class="generate-container">
+            <button class="generate-button">Generate video</button>
+          </div>
+
         </div>
-      </header>
+      </main>
     </div>
-    <!-- Main Content -->
-    <main class="main-content">
-      <div class="video-generator-container">
-        <!-- Media Upload Section -->
-        <div class="media-controls">
-          <button class="media-button">Upload media</button>
-          <button class="media-button">Clip picker</button>
-        </div>
-
-        <!-- Text Input Area -->
-        <div class="text-input-container">
-          <textarea class="text-input" rows="5"
-            placeholder="Enter your script here...">Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime mollitia, molestiae quas vel sint commodi repudiandae consequuntur voluptatum laborum numquam blanditiis harum quisquam eius sed odit fugiat iusto fuga praesentium optio, eaque rerum! Provident similique accusantium nemo autem.</textarea>
-        </div>
-
-        <!-- Controls Section -->
-        <div class="controls-section">
-          <div class="dropdown-controls">
-            <div class="dropdown-control">
-              <select class="control-select">
-                <option>Style</option>
-                <option>Professional</option>
-                <option>Casual</option>
-                <option>Energetic</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="checkbox-controls">
-            <label class="checkbox-control">
-              <input type="checkbox" /> Landscape (16:9)
-            </label>
-            <label class="checkbox-control">
-              <input type="checkbox" /> Video Style
-            </label>
-          </div>
-
-          <button class="preview-button">Preview images</button>
-        </div>
-
-        <!-- Image Grid -->
-        <div class="image-grid">
-          <div class="image-item" v-for="(image, index) in generatedImages" :key="index">
-            <img :src="image.url" alt="Generated Image" class="generated-image" />
-            <div class="image-controls">
-              <button class="regenerate-button">Regenerate</button>
-              <button class="edit-button" @click="goToImageEditor(image.url)">Edit</button>
-            </div>
-            <div class="text-input-container">
-              <textarea class="text-input" rows="5"
-                placeholder="Enter your script here...">Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime mollitia, molestiae quas vel sint commodi repudiandae consequuntur voluptatum laborum numquam blanditiis harum quisquam eius sed odit fugiat iusto fuga praesentium optio, eaque rerum! Provident similique accusantium nemo autem.</textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Navigation -->
-        <div class="navigation-controls">
-          <div class="navigation-arrow">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </div>
-
-          <div class="navigation-dots">
-            <span class="navigation-dot active"></span>
-            <span class="navigation-dot"></span>
-            <span class="navigation-dot"></span>
-          </div>
-
-          <div class="navigation-arrow">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-          </div>
-        </div>
-
-        <!-- Generate Button -->
-        <div class="generate-container">
-          <button class="generate-button">Generate video</button>
-        </div>
-
-      </div>
-    </main>
-
-    <!-- Footer -->
-    <!-- Footer -->
-    <footer class="footer">
-      <div class="footer-container">
-        <div class="footer-column">
-          <div class="footer-logo">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z">
-              </path>
-              <circle cx="12" cy="13" r="3"></circle>
-            </svg>
-            <span>VideoGenerator</span>
-          </div>
-        </div>
-
-        <div class="footer-column">
-          <h3 class="footer-heading">Pages</h3>
-          <ul class="footer-links">
-            <li><a href="#">Video Subtitle Generator</a></li>
-            <li><a href="#">Video Caption Generator</a></li>
-            <li><a href="#">Video Ad Generator</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-column">
-          <h3 class="footer-heading">Resources</h3>
-          <ul class="footer-links">
-            <li><a href="#">Sign in</a></li>
-            <li><a href="#">Sign up</a></li>
-            <li><a href="#">API</a></li>
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Terms of Service</a></li>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="#">Careers</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-column">
-          <h3 class="footer-heading">Blog</h3>
-          <ul class="footer-links">
-            <li><a href="#">Decoding the YouTube Shorts Algorithm: A Deep Dive into 3.3 Billion Views</a></li>
-            <li><a href="#">How to Make a Faceless Youtube Channel in 2025</a></li>
-            <li><a href="#">How to Get Followers on TikTok: A Step-by-Step Guide</a></li>
-          </ul>
-        </div>
-      </div>
-    </footer>
-  </div>
+  </DefaultLayout>
 </template>
 
 
 <script>
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
+
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
 const router = useRouter();
-
 export default {
-  setup() {
-    const isMenuOpen = ref(false);
-    const isUserMenuOpen = ref(false);
-    const isLanguageMenuOpen = ref(false);
-    const selectedLanguage = ref('English');
-    const user = ref({});
-
-    const userInitial = computed(() => {
-      if (user.value && user.value.name) {
-        return user.value.name.charAt(0).toUpperCase();
-      }
-      return '';
-    });
-
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          return;
-        }
-        const response = await axios.get('https://user-management-service-production-38e1.up.railway.app/api/v1/user/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (response.data.status === 'success') {
-          user.value = response.data.data;
-        }
-      } catch (error) {
-        console.error('Failed to fetch user profile:', error);
-        localStorage.removeItem('token');
-      }
-    };
-
-    const logout = () => {
-      localStorage.removeItem('token');
-      window.location.href = '/';
-    };
-
-    const toggleMenu = () => {
-      isMenuOpen.value = !isMenuOpen.value;
-
-      // Prevent scrolling when menu is open
-      if (isMenuOpen.value) {
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = '';
-      }
-    };
-
-    const toggleUserMenu = () => {
-      isUserMenuOpen.value = !isUserMenuOpen.value;
-    };
-
-    const toggleLanguageMenu = () => {
-      isLanguageMenuOpen.value = !isLanguageMenuOpen.value;
-    };
-
-    const selectLanguage = (language) => {
-      selectedLanguage.value = language;
-      isLanguageMenuOpen.value = false;
-    };
-
-    // Set default language to English
-    onMounted(() => {
-      selectedLanguage.value = 'English';
-      fetchUser();
-    });
-
-    return {
-      isMenuOpen,
-      isUserMenuOpen,
-      isLanguageMenuOpen,
-      selectedLanguage,
-      user,
-      userInitial,
-      toggleMenu,
-      toggleUserMenu,
-      toggleLanguageMenu,
-      selectLanguage,
-      fetchUser,
-      logout
-    };
+    components: {
+    DefaultLayout
   },
-  data() {
+  setup() {
+    const outputScript = ref('');
+    const generatedImages = ref([
+        { url: 'https://picsum.photos/id/237/200/300' },
+        { url: 'https://picsum.photos/id/232/200/300' },
+        { url: 'https://picsum.photos/id/233/200/300' },
+        { url: 'https://picsum.photos/id/234/200/300' }
+    ]);
+        
     return {
-      generatedImages: [
-        {
-          url: 'https://picsum.photos/id/237/200/300',
-          url: 'https://picsum.photos/id/232/200/300'
-
-        },
-        // Thêm nhiều hình ảnh khác nếu cần
-      ]
+      outputScript,  // Trả về outputScript để sử dụng trong template
+    generatedImages
     };
   },
   mounted() {
-    const savedImage = localStorage.getItem('editedImage')
+    const savedImage = localStorage.getItem('editedImage');
     if (savedImage) {
-      this.generatedImages.unshift({ url: savedImage }) // thêm ảnh mới vào đầu danh sách
-      localStorage.removeItem('editedImage') // optional
+      this.generatedImages.unshift({ url: savedImage }); // Thêm ảnh mới vào đầu danh sách
+      localStorage.removeItem('editedImage'); // optional
     }
   },
   methods: {
@@ -348,6 +125,7 @@ export default {
   }
 };
 </script>
+
 
 <style>
 :root {
