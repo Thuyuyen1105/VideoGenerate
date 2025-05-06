@@ -135,15 +135,9 @@ export default {
         await new Promise(resolve => setTimeout(resolve, 3000))
 
         const simulatedScript = {
-          scriptid: '12345',
+          scriptid: '6814b7134cb969301471ba41',
           outputScript: `Imagine a bright green banana plant, standing tall...`
         }
-      // Trước khi chuyển trang
-      sessionStorage.setItem('outputScript', JSON.stringify(simulatedScript.outputScript))
-      console.log('output',simulatedScript.outputScript)
-
-
-
         this.$router.push({
           path: '/generate',
           query: {

@@ -21,7 +21,8 @@ export default {
     const saveImage = () => {
       const dataUrl = editorInstance.toDataURL()
       localStorage.setItem('editedImage', dataUrl)
-      router.push('/generate')
+      router.push({ path: '/generate', query: { fromEdit: 'true' } })
+
     }
 
     onMounted(() => {

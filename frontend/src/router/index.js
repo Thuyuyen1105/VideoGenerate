@@ -20,7 +20,6 @@ const routes = [
   {path:'/setting', component: Setting},
   {path:'/analytics', component: Analytic},
   {path:'/test', component: Test},
-
 ];
 
 const router = createRouter({

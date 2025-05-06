@@ -5,21 +5,21 @@
       <main class="main-content">
         <div class="video-generator-container">
           <!-- Media Upload Section -->
-          <div class="media-controls">
-            <button class="media-button">Upload media</button>
-            <button class="media-button">Clip picker</button>
+          <div class="media-controls" :class="{'disabled': isPreviewing}">
+            <button class="media-button" :disabled="isPreviewing">Upload media</button>
+            <button class="media-button" :disabled="isPreviewing">Clip picker</button>
           </div>
 
           <!-- Text Input Area -->
-          <div class="text-input-container">
-            <textarea class="text-input" rows="5" placeholder="Enter your script here..." v-model="outputScript"></textarea>
+          <div class="text-input-container" :class="{'disabled': isPreviewing}">
+            <textarea class="text-input" rows="5" placeholder="Enter your script here..." v-model="outputScript" :disabled="isPreviewing"></textarea>
           </div>
 
           <!-- Controls Section -->
-          <div class="controls-section">
+          <div class="controls-section" :class="{'disabled': isPreviewing}">
             <div class="dropdown-controls">
               <div class="dropdown-control">
-                <select class="control-select">
+                <select class="control-select" :disabled="isPreviewing">
                   <option>Style</option>
                   <option>Professional</option>
                   <option>Casual</option>
@@ -30,32 +30,41 @@
 
             <div class="checkbox-controls">
               <label class="checkbox-control">
-                <input type="checkbox" /> Landscape (16:9)
+                <input type="checkbox" :disabled="isPreviewing" /> Landscape (16:9)
               </label>
               <label class="checkbox-control">
-                <input type="checkbox" /> Video Style
+                <input type="checkbox" :disabled="isPreviewing" /> Video Style
               </label>
             </div>
+          </div>
 
-            <button class="preview-button">Preview images</button>
+          <div>
+            <button class="preview-button" @click="previewImages">Preview images</button>
           </div>
 
           <!-- Image Grid -->
-          <div class="image-grid">
+          <div class="image-grid" v-if="isPreviewing">
             <div class="image-item" v-for="(image, index) in generatedImages" :key="index">
               <img :src="image.url" alt="Generated Image" class="generated-image" />
+
               <div class="image-controls">
                 <button class="regenerate-button">Regenerate</button>
                 <button class="edit-button" @click="goToImageEditor(image.url)">Edit</button>
               </div>
+
               <div class="text-input-container">
-                <textarea class="text-input" rows="5" v-model="outputScript"></textarea>
+                <textarea
+                  class="text-input"
+                  rows="5"
+                  :value="splitScript[index]?.text || ''"
+                  readonly
+                ></textarea>
               </div>
             </div>
           </div>
 
           <!-- Navigation -->
-          <div class="navigation-controls">
+          <div class="navigation-controls" v-if="isPreviewing">
             <div class="navigation-arrow" @click="prevImage">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="15 18 9 12 15 6"></polyline>
@@ -74,58 +83,165 @@
           </div>
 
           <!-- Generate Button -->
-          <div class="generate-container">
+          <div class="generate-container" v-if="isPreviewing">
             <button class="generate-button">Generate video</button>
           </div>
-
         </div>
       </main>
     </div>
   </DefaultLayout>
 </template>
 
-
 <script>
-import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import DefaultLayout from '@/layouts/DefaultLayout.vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import axios from 'axios';
-
-const router = useRouter();
 export default {
-    components: {
-    DefaultLayout
+  components: {
+    DefaultLayout,
   },
   setup() {
+    const route = useRoute();
+    const router = useRouter();
     const outputScript = ref('');
-    const generatedImages = ref([
-        { url: 'https://picsum.photos/id/237/200/300' },
-        { url: 'https://picsum.photos/id/232/200/300' },
-        { url: 'https://picsum.photos/id/233/200/300' },
-        { url: 'https://picsum.photos/id/234/200/300' }
-    ]);
-        
-    return {
-      outputScript,  // Trả về outputScript để sử dụng trong template
-    generatedImages
+    const scriptId = route.query.scriptId;
+    const isPreviewing = ref(false);
+    const generatedImages = ref([]);
+    const splitScript = ref([]);
+    const currentIndex = ref(0);
+
+    // Hàm lưu trạng thái vào localStorage
+    const saveState = () => {
+      const state = {
+        outputScript: outputScript.value,
+        isPreviewing: isPreviewing.value,
+        generatedImages: generatedImages.value,
+        splitScript: splitScript.value,
+        currentIndex: currentIndex.value,
+      };
+      localStorage.setItem('generateState', JSON.stringify(state));
     };
-  },
-  mounted() {
-    const savedImage = localStorage.getItem('editedImage');
-    if (savedImage) {
-      this.generatedImages.unshift({ url: savedImage }); // Thêm ảnh mới vào đầu danh sách
-      localStorage.removeItem('editedImage'); // optional
-    }
+
+    // Hàm khôi phục trạng thái từ localStorage
+    const restoreState = () => {
+      const savedState = localStorage.getItem('generateState');
+      if (savedState) {
+        const state = JSON.parse(savedState);
+        outputScript.value = state.outputScript || '';
+        isPreviewing.value = state.isPreviewing || false;
+        generatedImages.value = state.generatedImages || [];
+        splitScript.value = state.splitScript || [];
+        currentIndex.value = state.currentIndex || 0;
+      }
+    };
+
+    const prevImage = () => {
+      if (currentIndex.value > 0) currentIndex.value--;
+    };
+
+    const nextImage = () => {
+      if (currentIndex.value < generatedImages.value.length - 1) currentIndex.value++;
+    };
+
+    const setImageIndex = (index) => {
+      currentIndex.value = index;
+    };
+
+    const fetchSplitScript = async () => {
+      try {
+        const response = await fetch(`https://scriptservice-production.up.railway.app/api/scripts/${scriptId}/split`);
+        if (response.ok) {
+          const data = await response.json();
+          splitScript.value = data.sort((a, b) => a.order - b.order);
+        } else {
+          throw new Error('Response not OK');
+        }
+      } catch (error) {
+        console.error('Error fetching split script:', error);
+      }
+    };
+
+    const fetchScript = async () => {
+      try {
+        const response = await fetch(`https://scriptservice-production.up.railway.app/api/scripts/${scriptId}`);
+        if (response.ok) {
+          const data = await response.json();
+          outputScript.value = data.script;
+        } else {
+          throw new Error('Response not OK');
+        }
+      } catch (error) {
+        console.error('Error fetching script:', error);
+        outputScript.value = 'Error fetching script';
+      }
+    };
+
+    const fetchImage = async () => {
+      try {
+        const response = await fetch(`https://imageservice-production.up.railway.app/api/images/view/script/${scriptId}`);
+        if (response.ok) {
+          const data = await response.json();
+          generatedImages.value = data.data.map((image) => ({ url: image.url }));
+          isPreviewing.value = true;
+        } else {
+          throw new Error('Response not OK');
+        }
+      } catch (error) {
+        console.error('Error fetching image:', error);
+      }
+    };
+
+    const previewImages = () => {
+      fetchImage();
+      fetchSplitScript();
+    };
+
+    onMounted(async () => {
+      const fromEdit = route.query.fromEdit === 'true';
+
+      if (fromEdit) {
+        restoreState(); // Nếu quay lại từ edit, khôi phục state
+      } else {
+        // Fetch lại nếu từ nơi khác đến
+        if (scriptId) {
+          await fetchScript();
+          await fetchImage();
+          await fetchSplitScript();
+        }
+        // Optional: Xóa localStorage nếu không cần giữ lâu dài
+        localStorage.removeItem('generateState');
+      }
+    });
+
+    // Theo dõi các thay đổi và lưu trạng thái
+    watch([outputScript, isPreviewing, generatedImages, splitScript, currentIndex], saveState, { deep: true });
+
+    return {
+      outputScript,
+      generatedImages,
+      isPreviewing,
+      previewImages,
+      splitScript,
+      currentIndex,
+      prevImage,
+      nextImage,
+      setImageIndex,
+    };
   },
   methods: {
     goToImageEditor(imageUrl) {
-      this.$router.push({ path: '/test', query: { image: imageUrl } });
-    }
-  }
+      this.$router.push({
+        path: '/test',
+        query: {
+          image: imageUrl,
+          fromGenerate: 'true' // Có thể dùng nếu bạn muốn
+        }
+      });
+    },
+  },
 };
 </script>
-
 
 <style>
 :root {
@@ -617,6 +733,14 @@ body {
 
 .preview-button:hover {
   background-color: var(--accent-color-red-dark);
+}
+.generated-image {
+  max-width: 100%;
+  max-height: 300px; /* hoặc bất kỳ giá trị phù hợp */
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
 }
 
 .image-grid {
