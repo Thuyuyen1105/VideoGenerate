@@ -122,6 +122,28 @@ export default {
           return
         }
 
+        const response = await fetch('https://user-management-service-production-38e1.up.railway.app/api/v1/youtube/auth/url', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          window.location.href = data.data.authUrl
+        }
+      } catch (error) {
+        console.error('Error getting YouTube auth URL:', error)
+      }
+    },
+    async checkYoutubeAccount() {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          this.$router.push('/login')
+          return
+        }
+
         // Kiểm tra thông tin trong localStorage trước
         const savedYoutubeData = localStorage.getItem('youtubeData')
         if (savedYoutubeData) {
@@ -141,12 +163,9 @@ export default {
           const youtubeData = data.data.socialAccount
           localStorage.setItem('youtubeData', JSON.stringify(youtubeData))
           this.userSocial.youtube = youtubeData
-        } else {
-          // Xử lý khi chưa liên kết tài khoản
-          window.location.href = 'https://user-management-service-production-38e1.up.railway.app/api/v1/auth/youtube'
         }
       } catch (error) {
-        console.error('Error linking YouTube account:', error)
+        console.error('Error checking YouTube account:', error)
       }
     },
     deleteAccount() {
@@ -155,7 +174,7 @@ export default {
   },
   async created() {
     // Kiểm tra tài khoản YouTube khi component được tạo
-    await this.linkYoutubeAccount()
+    await this.checkYoutubeAccount()
   }
 }
 </script>
