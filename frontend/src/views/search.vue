@@ -17,7 +17,7 @@
                 style="width: 100%; padding: 15px; border: 1px solid var(--gray-medium); border-radius: var(--border-radius); font-size: 16px;"
                 v-model="videoIdea"
               />
-              <button style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background-color: black; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none;">
+              <button @click="generateScript" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background-color: black; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none;">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
@@ -90,6 +90,10 @@
 
 <script>
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
+const scriptAPI = import.meta.env.VITE_SCRIPT_API
+
+
+
 
 export default {
   name: 'SearchView',
@@ -140,7 +144,15 @@ export default {
           'How-to Guide'
         ]
       }
+    },
+    async generateScript(){
+      //TODO: gửi thông tin đến crawldata
+      //nhận thông tin từ craldata
+      //TODO: gửi thông tin đến scriptSV
+      //script nhận đuược các thông tin khác nhưng phải chờ thêm thông tin của crawldata mới thực hiện generate được
     }
+
+
   },
   async created() {
     await this.fetchSuggestions()

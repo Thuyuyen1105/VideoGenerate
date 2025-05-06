@@ -15,5 +15,6 @@ export default defineConfig({
   server: {
     port: 3000, // Sử dụng port cố định 3000
     host: true, // Cho phép truy cập từ các thiết bị khác trong mạng
+    
   },
 });

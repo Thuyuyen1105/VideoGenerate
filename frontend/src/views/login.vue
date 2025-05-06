@@ -88,6 +88,7 @@ export default {
 
         if (response.data.status === 'success') {
           localStorage.setItem('token', response.data.data.token)
+          localStorage.setItem('userId', response.data.data.userId) // Lưu userId vào localStorage
           this.$router.push('/')
         } else {
           const errorMessage = response.data.message
