@@ -36,24 +36,37 @@
             
             <div style="display: flex; gap: 8px; margin-bottom: 20px;">
               <div style="flex: 1;">
-                <select style="width: 100%; padding: 8px; border: 1px solid var(--gray-medium); border-radius: var(--border-radius); background-color: white;">
-                  <option>English</option>
-                  <option>Spanish</option>
-                  <option>French</option>
+                <select v-model="selectedLanguage" style="width: 100%; padding: 8px; border: 1px solid var(--gray-medium); border-radius: var(--border-radius); background-color: white;">
+                  <option value="en">English</option>
+                  <option value="vi">Vietnamese</option>
                 </select>
               </div>
+
               <div style="flex: 1;">
-                <select style="width: 100%; padding: 8px; border: 1px solid var(--gray-medium); border-radius: var(--border-radius); background-color: white;">
-                  <option>Very short</option>
-                  <option>Short</option>
-                  <option>Medium</option>
+                <select v-model="selectedLength" style="width: 100%; padding: 8px; border: 1px solid var(--gray-medium); border-radius: var(--border-radius); background-color: white;">
+                  <option value="veryshort">Very short</option>
+                  <option value="short">Short</option>
+                  <option value="medium">Medium</option>
+                  <option value="long">Long</option>
+
                 </select>
               </div>
+
               <div style="flex: 1;">
-                <select style="width: 100%; padding: 8px; border: 1px solid var(--gray-medium); border-radius: var(--border-radius); background-color: white;">
-                  <option>Professional</option>
-                  <option>Casual</option>
-                  <option>Funny</option>
+                <select v-model="selectedTone" style="width: 100%; padding: 8px; border: 1px solid var(--gray-medium); border-radius: var(--border-radius); background-color: white;">
+                  <option value="casual">Casual</option>
+                  <option value="storytelling">Storytelling</option>
+                  <option value="educational">Educational</option>
+                  <option value="funny">Funny</option>
+                </select>
+              </div>
+
+              <div>
+                  <select v-model="selectAudience" style="width: 100%; padding: 8px; border: 1px solid var(--gray-medium); border-radius: var(--border-radius); background-color: white;">
+                  <option value="kids">Kid</option>
+                  <option value="teenager">Teenager</option>
+                  <option value="adult">Adult</option>
+                  <option value="expert">Expert</option>
                 </select>
               </div>
             </div>
@@ -86,7 +99,11 @@ export default {
   data() {
     return {
       videoIdea: '',
-      randomIdeas: []
+      randomIdeas: [],
+      selectedLanguage: 'en',
+      selectedLength: 'medium',
+      selectedTone: 'casual',
+      selectAudience: 'adult'
     }
   },
   methods: {
