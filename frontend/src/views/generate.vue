@@ -108,7 +108,7 @@
 
 <script>
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 export default {
@@ -122,137 +122,141 @@ export default {
     const scriptId = route.query.scriptId;
     const isPreviewing = ref(false);
     const generatedImages = ref([]);
-    const splitScript = ref([]);
+    const splitScript = ref([]); // Thêm biến splitScript
     const currentIndex = ref(0);
 
-    // Hàm lưu trạng thái vào localStorage
-    const saveState = () => {
-      const state = {
-        outputScript: outputScript.value,
-        isPreviewing: isPreviewing.value,
-        generatedImages: generatedImages.value,
-        splitScript: splitScript.value,
-        currentIndex: currentIndex.value,
-      };
-      localStorage.setItem('generateState', JSON.stringify(state));
-    };
+    // Hàm cập nhật script từ textarea
+    const updateScript = async () => {
+      try {
+        const response = await fetch(`http://localhost:3005/api/scripts/${scriptId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            script: outputScript.value, // Lấy script từ textarea
 
-    // Hàm khôi phục trạng thái từ localStorage
-    const restoreState = () => {
-      const savedState = localStorage.getItem('generateState');
-      if (savedState) {
-        const state = JSON.parse(savedState);
-        outputScript.value = state.outputScript || '';
-        isPreviewing.value = state.isPreviewing || false;
-        generatedImages.value = state.generatedImages || [];
-        splitScript.value = state.splitScript || [];
-        currentIndex.value = state.currentIndex || 0;
+            jobId: "681ba2955bdccd397d995370",
+            scriptId: scriptId,
+            userId: "6616e1b2ac9fb8d3bfc8a4c1",
+
+            voiceStyle: "Standard",
+            voiceGender: "FEMALE",
+
+            imageStyle: "anime", // Default style if not provided
+            imageResolution: "1024x1024", // Default resolution if not provided
+
+            voiceLanguage: "en"
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update script');
+        }
+
+        console.log('Script updated successfully');
+      } catch (error) {
+        console.error('Error updating script:', error);
       }
     };
 
-    const prevImage = () => {
-      if (currentIndex.value > 0) currentIndex.value--;
+    // Hàm kiểm tra trạng thái job và lấy ảnh
+    const pollJobStatus = async (jobId, interval = 2000) => {
+      return new Promise((resolve, reject) => {
+        const poll = async () => {
+          try {
+            const response = await fetch(`http://localhost:3009/api/images/job/${jobId}`);
+            const result = await response.json();
+
+            console.log('Polling result:', result);
+
+            if (result.status === 'success') {
+              if (result.data.status === 'completed') {
+                resolve(result.data.images);
+              } else if (result.data.status === 'processing') {
+                setTimeout(poll, interval);
+              } else {
+                reject(new Error(`Job status: ${result.data.status}`));
+              }
+            } else {
+              reject(new Error(result.error || 'Unknown error'));
+            }
+          } catch (error) {
+            reject(error);
+          }
+        };
+
+        poll();
+      });
     };
 
-    const nextImage = () => {
-      if (currentIndex.value < generatedImages.value.length - 1) currentIndex.value++;
-    };
-
-    const setImageIndex = (index) => {
-      currentIndex.value = index;
-    };
-
+    // Hàm lấy split script
     const fetchSplitScript = async () => {
       try {
-        const response = await fetch(`https://scriptservice-production.up.railway.app/api/scripts/${scriptId}/split`);
+        const response = await fetch(`http://localhost:3005/api/scripts/${scriptId}/split`);
         if (response.ok) {
           const data = await response.json();
-          splitScript.value = data.sort((a, b) => a.order - b.order);
+          splitScript.value = data.sort((a, b) => a.order - b.order); // Gán và sắp xếp theo thứ tự
+          console.log('Split script fetched successfully:', splitScript.value);
         } else {
-          throw new Error('Response not OK');
+          throw new Error('Failed to fetch split script');
         }
       } catch (error) {
         console.error('Error fetching split script:', error);
       }
     };
 
-    const fetchScript = async () => {
+    // Hàm xử lý khi nhấn nút "Preview Images"
+    const previewImages = async () => {
       try {
-        const response = await fetch(`https://scriptservice-production.up.railway.app/api/scripts/${scriptId}`);
-        if (response.ok) {
-          const data = await response.json();
-          outputScript.value = data.script;
-        } else {
-          throw new Error('Response not OK');
-        }
-      } catch (error) {
-        console.error('Error fetching script:', error);
-        outputScript.value = 'Error fetching script';
-      }
-    };
+        await updateScript(); // Cập nhật script trước
+        const jobId = '681ba2955bdccd397d995370'; // Thay bằng jobId thực tế từ backend
+        const images = await pollJobStatus(jobId); // Kiểm tra trạng thái job
+        generatedImages.value = images.map((image) => ({ url: image.url })); // Cập nhật danh sách ảnh
+        isPreviewing.value = true; // Chuyển sang chế độ preview
+        console.log('Images ready:', images);
 
-    const fetchImage = async () => {
-      try {
-        const response = await fetch(`https://imageservice-production.up.railway.app/api/images/view/script/${scriptId}`);
-        if (response.ok) {
-          const data = await response.json();
-          generatedImages.value = data.data.map((image) => ({ url: image.url }));
-          isPreviewing.value = true;
-        } else {
-          throw new Error('Response not OK');
-        }
+        // Gọi fetchSplitScript sau khi pollJobStatus thành công
+        await fetchSplitScript();
       } catch (error) {
-        console.error('Error fetching image:', error);
+        console.error('Error during preview:', error);
       }
-    };
-
-    const previewImages = () => {
-      fetchImage();
-      fetchSplitScript();
     };
 
     onMounted(async () => {
-      const fromEdit = route.query.fromEdit === 'true';
-
-      if (fromEdit) {
-        restoreState(); // Nếu quay lại từ edit, khôi phục state
-      } else {
-        // Fetch lại nếu từ nơi khác đến
-        if (scriptId) {
-          await fetchScript();
-          await fetchImage();
-          await fetchSplitScript();
+      if (scriptId) {
+        // Fetch script nếu cần thiết
+        try {
+          const response = await fetch(`http://localhost:3005/api/scripts/${scriptId}`);
+          if (response.ok) {
+            const data = await response.json();
+            outputScript.value = data.script;
+          } else {
+            throw new Error('Failed to fetch script');
+          }
+        } catch (error) {
+          console.error('Error fetching script:', error);
         }
-        // Optional: Xóa localStorage nếu không cần giữ lâu dài
-        localStorage.removeItem('generateState');
       }
     });
 
-    // Theo dõi các thay đổi và lưu trạng thái
-    watch([outputScript, isPreviewing, generatedImages, splitScript, currentIndex], saveState, { deep: true });
+    // Theo dõi và lưu trạng thái nếu cần
+    watch([outputScript, isPreviewing, generatedImages], () => {
+      const state = {
+        outputScript: outputScript.value,
+        isPreviewing: isPreviewing.value,
+        generatedImages: generatedImages.value,
+      };
+      localStorage.setItem('generateState', JSON.stringify(state));
+    });
 
     return {
       outputScript,
       generatedImages,
+      splitScript, // Trả về splitScript để sử dụng trong template
       isPreviewing,
       previewImages,
-      splitScript,
-      currentIndex,
-      prevImage,
-      nextImage,
-      setImageIndex,
     };
-  },
-  methods: {
-    goToImageEditor(imageUrl) {
-      this.$router.push({
-        path: '/test',
-        query: {
-          image: imageUrl,
-          fromGenerate: 'true' // Có thể dùng nếu bạn muốn
-        }
-      });
-    },
   },
 };
 </script>
