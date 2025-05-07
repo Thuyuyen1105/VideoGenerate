@@ -165,7 +165,7 @@ export default {
       return new Promise((resolve, reject) => {
         const poll = async () => {
           try {
-            const response = await fetch(`http://localhost:3009/api/images/job/${jobId}`);
+            const response = await fetch(`https://imageservice-production.up.railway.app/api/images/job/${jobId}`);
             const result = await response.json();
 
             console.log('Polling result:', result);
@@ -193,7 +193,7 @@ export default {
     // Hàm lấy split script
     const fetchSplitScript = async () => {
       try {
-        const response = await fetch(`http://localhost:3005/api/scripts/${scriptId}/split`);
+        const response = await fetch(`https://scriptservice-production.up.railway.app/api/scripts/${scriptId}/split`);
         if (response.ok) {
           const data = await response.json();
           splitScript.value = data.sort((a, b) => a.order - b.order); // Gán và sắp xếp theo thứ tự
@@ -227,7 +227,7 @@ export default {
       if (scriptId) {
         // Fetch script nếu cần thiết
         try {
-          const response = await fetch(`http://localhost:3005/api/scripts/${scriptId}`);
+          const response = await fetch(`https://scriptservice-production.up.railway.app/api/scripts/${scriptId}`);
           if (response.ok) {
             const data = await response.json();
             outputScript.value = data.script;
