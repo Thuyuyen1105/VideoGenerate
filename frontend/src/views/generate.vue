@@ -5,40 +5,56 @@
       <main class="main-content">
         <div class="video-generator-container">
           <!-- Media Upload Section -->
-          <div class="media-controls" :class="{'disabled': isPreviewing}">
+          <div class="media-controls" style="margin-top:-50px;" :class="{ 'disabled': isPreviewing }">
             <button class="media-button" :disabled="isPreviewing">Upload media</button>
-            <button class="media-button" :disabled="isPreviewing">Clip picker</button>
           </div>
-
           <!-- Text Input Area -->
-          <div class="text-input-container" :class="{'disabled': isPreviewing}">
-            <textarea class="text-input" rows="5" placeholder="Enter your script here..." v-model="outputScript" :disabled="isPreviewing"></textarea>
+          <div class="text-input-container" :class="{ 'disabled': isPreviewing }">
+            <textarea class="text-input" rows="5" placeholder="Enter your script here..." v-model="outputScript"
+              :disabled="isPreviewing"></textarea>
           </div>
 
           <!-- Controls Section -->
-          <div class="controls-section" :class="{'disabled': isPreviewing}">
+          <div class="controls-section" :class="{ 'disabled': isPreviewing }">
             <div class="dropdown-controls">
-              <div class="dropdown-control">
-                <select class="control-select" :disabled="isPreviewing">
-                  <option>Style</option>
-                  <option>Professional</option>
-                  <option>Casual</option>
-                  <option>Energetic</option>
+              <div class="dropdown-controls" style="display: flex; gap: 20px;">
+                <!-- Style dropdown -->
+                <div class="dropdown-control" style="display: flex; flex-direction: column;">
+                  <label for="style-select" style="margin-bottom: 5px;">Style:</label>
+                  <select id="style-select" class="control-select" :disabled="isPreviewing">
+                    <option value="professional">Professional</option>
+                    <option value="casual">Casual</option>
+                    <option value="energetic">Energetic</option>
+                  </select>
+                </div>
+
+                <!-- Gender dropdown -->
+                <div class="dropdown-control" style="display: flex; flex-direction: column;">
+                  <label for="gender-select" style="margin-bottom: 5px;">Gender:</label>
+                  <select id="gender-select" class="control-select" :disabled="isPreviewing">
+                    <option value="man">Man</option>
+                    <option value="woman">Woman</option>
+                  </select>
+                </div>
+                <div>
+                  <button class="preview-button" style="margin-top: 28px;">Preview voice</button>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: end;">
+              <!-- Aspect Ratio dropdown -->
+              <div class="dropdown-control" style="display: flex; flex-direction: column;">
+                <label for="aspect-select" style="margin-bottom: 5px;">Aspect Ratio:</label>
+                <select id="aspect-select" class="control-select" :disabled="isPreviewing">
+                  <option value="16:9">16:9</option>
+                  <option value="1:1">1:1</option>
+                  <option value="9:16">9:16</option>
                 </select>
               </div>
             </div>
-
-            <div class="checkbox-controls">
-              <label class="checkbox-control">
-                <input type="checkbox" :disabled="isPreviewing" /> Landscape (16:9)
-              </label>
-              <label class="checkbox-control">
-                <input type="checkbox" :disabled="isPreviewing" /> Video Style
-              </label>
-            </div>
           </div>
 
-          <div>
+          <div style="display: flex; justify-content: center;">
             <button class="preview-button" @click="previewImages">Preview images</button>
           </div>
 
@@ -53,12 +69,7 @@
               </div>
 
               <div class="text-input-container">
-                <textarea
-                  class="text-input"
-                  rows="5"
-                  :value="splitScript[index]?.text || ''"
-                  readonly
-                ></textarea>
+                <textarea class="text-input" rows="5" :value="splitScript[index]?.text || ''" readonly></textarea>
               </div>
             </div>
           </div>
@@ -66,17 +77,20 @@
           <!-- Navigation -->
           <div class="navigation-controls" v-if="isPreviewing">
             <div class="navigation-arrow" @click="prevImage">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
             </div>
 
             <div class="navigation-dots">
-              <span v-for="(image, index) in generatedImages" :key="index" :class="{'active': currentIndex === index}" @click="setImageIndex(index)"></span>
+              <span v-for="(image, index) in generatedImages" :key="index" :class="{ 'active': currentIndex === index }"
+                @click="setImageIndex(index)"></span>
             </div>
 
             <div class="navigation-arrow" @click="nextImage">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </div>
@@ -734,9 +748,11 @@ body {
 .preview-button:hover {
   background-color: var(--accent-color-red-dark);
 }
+
 .generated-image {
   max-width: 100%;
-  max-height: 300px; /* hoặc bất kỳ giá trị phù hợp */
+  max-height: 300px;
+  /* hoặc bất kỳ giá trị phù hợp */
   object-fit: cover;
   border-radius: 8px;
   display: block;
