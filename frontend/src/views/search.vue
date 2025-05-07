@@ -83,12 +83,13 @@
 </template>
 
 <script>
-import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import DefaultLayout from '@/layouts/DefaultLayout.vue';
+import { io } from 'socket.io-client';
 
 export default {
   name: 'SearchView',
   components: {
-    DefaultLayout
+    DefaultLayout,
   },
   data() {
     return {
@@ -98,65 +99,85 @@ export default {
       selectedLength: 'medium',
       selectedTone: 'casual',
       selectAudience: 'adult',
-      loading: false
-    }
+      loading: false,
+      socket: null, // WebSocket instance
+    };
   },
   methods: {
     selectIdea(idea) {
-      this.videoIdea = idea
+      this.videoIdea = idea;
     },
     async fetchSuggestions() {
       try {
-        const response = await fetch('https://data-management-service-production.up.railway.app/api/v1/data/suggestions')
+        const response = await fetch('https://data-management-service-production.up.railway.app/api/v1/data/suggestions');
         if (response.ok) {
-          const data = await response.json()
-          this.randomIdeas = data
+          const data = await response.json();
+          this.randomIdeas = data;
         } else {
-          throw new Error('Response not OK')
+          throw new Error('Response not OK');
         }
       } catch (error) {
-        console.error('Error fetching suggestions:', error)
+        console.error('Error fetching suggestions:', error);
         this.randomIdeas = [
-          'Product Demo', 'Tutorial Video', 'Company Overview',
-          'Event Highlights', 'Testimonial', 'How-to Guide'
-        ]
+          'Product Demo',
+          'Tutorial Video',
+          'Company Overview',
+          'Event Highlights',
+          'Testimonial',
+          'How-to Guide',
+        ];
       }
     },
     async generateScript() {
-      //TODO: gửi thông tin đến crawldata
-      //nhận thông tin từ crawldata
-      //gửi thông tin đến scriptSV
-      //script nhận đuược các thông tin khác nhưng phải chờ thêm thông tin của crawldata mới thực hiện generate được
-
-      //sau khi nhận được thông tin từ scriptid. thì lưu và truyền thông tin qua các compnent khác
-
-      this.loading = true
+      this.loading = true;
       try {
-        await new Promise(resolve => setTimeout(resolve, 3000))
+        //gửi thông tin cho crawl data
 
-        const simulatedScript = {
-          scriptid: '6814b7134cb969301471ba41',
-          outputScript: `Imagine a bright green banana plant, standing tall...`
-        }
+        //CRAWL trả về jobid
+        const jobId='550e8400-e29b-41d4-a716-446655440000'
+        
+        this.registerForJob(jobId);
+      } catch (error) {
+        console.error('Failed to generate script', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    registerForJob(jobId) {
+      if (this.socket) {
+        this.socket.emit('register', jobId);
+      }
+    },
+    handleScriptResult(result) {
+     if (result.status === 200 || result.status === 201) {
+        console.log('Received script result:', result);
         this.$router.push({
           path: '/generate',
           query: {
-            scriptId: simulatedScript.scriptid,
+            scriptId: result.data.scriptId,
             language: this.selectedLanguage,
-
           },
-        })
-      } catch (error) {
-        console.error('Failed to generate script', error)
-      } finally {
-        this.loading = false
+        });
+      } else {
+        console.error('Error receiving script result:', result.error);
       }
-    }
+    },
   },
   async created() {
-    await this.fetchSuggestions()
-  }
-}
+    await this.fetchSuggestions();
+
+    // Kết nối tới WebSocket server
+    this.socket = io('http://localhost:3005');
+    // Lắng nghe kết quả từ server
+    this.socket.on('scriptResult', this.handleScriptResult);
+  },
+  beforeDestroy() {
+    // Ngắt kết nối WebSocket khi component bị hủy
+    if (this.socket) {
+      this.socket.disconnect();
+    }
+  },
+};
 </script>
 
 <style scoped>
