@@ -210,7 +210,7 @@ export default {
     const previewImages = async () => {
       try {
         await updateScript(); // Cập nhật script trước
-        const jobId = '681ba2955bdccd397d995370'; // Thay bằng jobId thực tế từ backend
+        const jobId = localStorage.getItem('currentJobId');
         const images = await pollJobStatus(jobId); // Kiểm tra trạng thái job
         generatedImages.value = images.map((image) => ({ url: image.url })); // Cập nhật danh sách ảnh
         isPreviewing.value = true; // Chuyển sang chế độ preview
