@@ -61,17 +61,26 @@
             </div>
             <div class="user-menu-divider" v-if="user.socialAccounts && user.socialAccounts.length"></div>
             <ul class="user-menu-items">
+              <a href="/my-videos" style="text-decoration: none; color: inherit;">
               <li class="user-menu-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 7l-7 5 7 5V7z"></path>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                  </svg>
+                  <span>My Videos</span>
+                </li>
+              </a>
                 <a href="/setting" style="text-decoration: none; color: inherit;">
+                <li class="user-menu-item">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
                   </svg>
                   <span>My Account</span>
+                </li>
                 </a>
-              </li>
+              <a href="/analytics" style="text-decoration: none; color: inherit;">
               <li class="user-menu-item">
-                <a href="/analytics" style="text-decoration: none; color: inherit;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <polyline points="14 2 14 8 20 8"></polyline>
@@ -80,9 +89,10 @@
                     <polyline points="10 9 9 9 8 9"></polyline>
                   </svg>
                   <span>Statistics</span>
+                </li>
                 </a>
-              </li>
-              <li class="user-menu-item" @click="logout">
+              <a href="#" @click.prevent="logout" style="text-decoration: none; color: inherit;">
+                <li class="user-menu-item">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                   <polyline points="16 17 21 12 16 7"></polyline>
@@ -90,6 +100,7 @@
                 </svg>
                 <span>Log Out</span>
               </li>
+              </a>
             </ul>
           </div>
         </div>

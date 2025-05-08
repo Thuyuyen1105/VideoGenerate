@@ -4,11 +4,13 @@ import Signup from '@/views/signup.vue';
 
 import Dashboard from '@/views/dashboard.vue';
 // import DashboardUser from '@/views/dashboard-user.vue';
+
 import Search from '@/views/search.vue';
 import Generate from '@/views/generate.vue';
 import Setting from '@/views/setting.vue';
 import Analytic from '@/views/analytics.vue';
 import Test from '@/views/test.vue'
+import MyVideos from '@/views/my-videos.vue';
 
 const routes = [
   {path: '/', component: Dashboard },
@@ -19,6 +21,7 @@ const routes = [
   {path:'/generate', component: Generate},
   {path:'/setting', component: Setting},
   {path:'/analytics', component: Analytic},
+  {path:'/my-videos', component: MyVideos},
   {path:'/test', component: Test},
 ];
 
