@@ -65,21 +65,35 @@
             <button class="preview-button" @click="previewImages">Preview images</button>
           </div>
 
+          <!-- Hiển thị spinner khi đang loading -->
+          <div v-if="isLoading" class="loading-spinner" style="text-align: center; margin-top: 20px;">
+            <p>Loading images...</p>
+            <div class="spinner"></div>
+        </div>
+
           <!-- Image Grid -->
-          <div class="image-grid" v-if="isPreviewing">
-            <div class="image-item" v-for="(image, index) in generatedImages" :key="index">
-              <img :src="image.url" alt="Generated Image" class="generated-image" />
+        <div class="image-grid" v-if="isPreviewing">
+          <div class="image-item" v-for="(image, index) in generatedImages" :key="index">
+            <!-- Hiển thị ảnh -->
+            <img :src="image.imageUrl" alt="Generated Image" class="generated-image" />
 
-              <div class="image-controls">
-                <button class="regenerate-button">Regenerate</button>
-                <button class="edit-button" @click="goToImageEditor(image.url)">Edit</button>
-              </div>
+            <!-- Hiển thị đoạn script tương ứng -->
+            <div class="text-input-container">
+              <textarea 
+                class="text-input" 
+                rows="5" 
+                :value="image.text || ''" 
+                readonly
+              ></textarea>
+            </div>
 
-              <div class="text-input-container">
-                <textarea class="text-input" rows="5" :value="splitScript[index]?.text || ''" readonly></textarea>
-              </div>
+            <!-- Các nút điều khiển -->
+            <div class="image-controls">
+              <button class="regenerate-button" @click="regenerateImage(image)">Regenerate</button>
+              <button class="edit-button" @click="goToImageEditor(image.imageUrl)">Edit</button>
             </div>
           </div>
+        </div>
 
           <!-- Navigation -->
           <div class="navigation-controls" v-if="isPreviewing">
@@ -136,6 +150,8 @@ export default {
     const gender = ref('MALE');
     const language = ref('vi-VN');
     const audioPlayer = ref(null);
+    const isLoading = ref(false); // Biến trạng thái loading
+
 
     // Hàm cập nhật script từ textarea
     const updateScript = async () => {
@@ -172,35 +188,44 @@ export default {
       }
     };
 
-    // Hàm kiểm tra trạng thái job và lấy ảnh
-    const pollJobStatus = async (jobId, interval = 2000) => {
-      return new Promise((resolve, reject) => {
+const pollJobStatus = async (jobId, interval = 2000, maxAttempts = 300) => {
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+        
         const poll = async () => {
-          try {
-            const response = await fetch(`https://imageservice-production.up.railway.app/api/images/job/${jobId}`);
-            const result = await response.json();
+            try {
+                attempts++;
+                
+                const response = await fetch(`https://imageservice-production.up.railway.app/api/images/job/${jobId}`);
+                const result = await response.json();
 
-            console.log('Polling result:', result);
+                console.log(`Polling attempt ${attempts}:`, result);
 
-            if (result.status === 'success') {
-              if (result.data.status === 'completed') {
-                resolve(result.data.images);
-              } else if (result.data.status === 'processing') {
-                setTimeout(poll, interval);
-              } else {
-                reject(new Error(`Job status: ${result.data.status}`));
-              }
-            } else {
-              reject(new Error(result.error || 'Unknown error'));
+                if (result.status === 'success') {
+                    if (result.data.status === 'completed') {
+                        resolve(result.data.images);
+                    } else if (result.data.status === 'failed') {
+                        reject(new Error(`Job failed: ${result.data.error}`));
+                    } else if (attempts >= maxAttempts) {
+                        reject(new Error('Polling timeout'));
+                    } else {
+                        setTimeout(poll, interval);
+                    }
+                } else {
+                    reject(new Error(result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                if (attempts >= maxAttempts) {
+                    reject(new Error('Polling timeout'));
+                } else {
+                    setTimeout(poll, interval);
+                }
             }
-          } catch (error) {
-            reject(error);
-          }
         };
 
         poll();
-      });
-    };
+    });
+};
 
     // Hàm lấy split script
     const fetchSplitScript = async () => {
@@ -221,20 +246,32 @@ export default {
     // Hàm xử lý khi nhấn nút "Preview Images"
     const previewImages = async () => {
       try {
+        isLoading.value = true; // Bắt đầu trạng thái loading
         await updateScript(); // Cập nhật script trước
+        await fetchSplitScript(); // Lấy danh sách splitScript
+
         const jobId = localStorage.getItem('currentJobId');
         const images = await pollJobStatus(jobId); // Kiểm tra trạng thái job
-        generatedImages.value = images.map((image) => ({ url: image.url })); // Cập nhật danh sách ảnh
-        isPreviewing.value = true; // Chuyển sang chế độ preview
-        console.log('Images ready:', images);
 
-        // Gọi fetchSplitScript sau khi pollJobStatus thành công
-        await fetchSplitScript();
+        // Map mỗi đoạn splitScript với một ảnh duy nhất
+        const mappedImages = splitScript.value.map((script, index) => {
+          const matchingImage = images[index];
+          if (matchingImage) {
+            return { ...script, imageUrl: matchingImage.url };
+          } else {
+            return { ...script, imageUrl: null };
+          }
+        });
+
+        generatedImages.value = mappedImages.filter((item) => item.imageUrl !== null);
+        isPreviewing.value = true; // Chuyển sang chế độ preview
+        console.log('Mapped images and scripts:', generatedImages.value);
       } catch (error) {
         console.error('Error during preview:', error);
+      } finally {
+        isLoading.value = false; // Kết thúc trạng thái loading
       }
     };
-
     const handlePreviewVoice = async () => {
       try {
         isPreviewing.value = true;
@@ -340,6 +377,7 @@ export default {
       language,
       audioPlayer,
       handlePreviewVoice,
+      isLoading
     };
   },
 };
@@ -381,7 +419,19 @@ body {
   flex-direction: column;
   min-height: 100vh;
 }
+.spinner {
+  border: 4px solid var(--gray-light);
+  border-top: 4px solid black;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+}
 
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 /* Section Divider */
 .section-divider {
   height: 1px;

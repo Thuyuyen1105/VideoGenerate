@@ -167,8 +167,7 @@ export default {
         this.registerForJob(data.job_id);
       } catch (error) {
         console.error('Failed to generate script', error);
-      } finally {
-        this.loading = false;
+            this.loading = false; // Dừng loading nếu có lỗi;
       }
     },
     registerForJob(jobId) {
@@ -177,7 +176,7 @@ export default {
       }
     },
     handleScriptResult(result) {
-     if (result.status === 200 || result.status === 201) {
+      if (result.status === 200 || result.status === 201) {
         console.log('Received script result:', result);
         this.$router.push({
           path: '/generate',
@@ -185,9 +184,12 @@ export default {
             scriptId: result.data.scriptId,
             language: this.selectedLanguage,
           },
+        }).finally(() => {
+          this.loading = false; // Dừng loading sau khi chuyển trang
         });
       } else {
         console.error('Error receiving script result:', result.error);
+        this.loading = false; // Dừng loading nếu có lỗi
       }
     },
   },
