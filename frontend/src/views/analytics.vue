@@ -50,8 +50,11 @@
               <td>{{ video.shares }}</td>
               <td class="platform-cell">
                 <div class="platform-buttons">
-                  <button v-for="platform in video.platforms" :key="platform" class="platform-button"
-                    :class="platform.toLowerCase()">
+                  <button v-for="platform in video.platforms" 
+                    :key="platform" 
+                    class="platform-button"
+                    :class="platform.toLowerCase()"
+                    @click="openVideo(video.videoId)">
                     {{ platform }}
                   </button>
                 </div>
@@ -100,7 +103,7 @@ export default {
     return {
       videos: [],
       chart: null,
-      defaultHandle: '@NekoGamers089', // handle mặc định ở đây
+      channelId: JSON.parse(localStorage.getItem('socialAccounts'))?.socialId,
       apiKey: 'AIzaSyDS6iN4haeWypLKvsX9u7rNNotdXPUrINQ',
       currentPage: 1,
       itemsPerPage: 10
@@ -126,50 +129,22 @@ export default {
   },
   async mounted() {
     await this.fetchYoutubeVideos()
-    this.initChart()
   },
   methods: {
-    async getChannelIdByHandle(handle) {
-      try {
-        const res = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-          params: {
-            key: this.apiKey,
-            q: handle,
-            type: 'channel',
-            part: 'snippet',
-            maxResults: 1
-          }
-        })
-        return res.data.items[0]?.snippet?.channelId || null
-      } catch (err) {
-        console.error('Lỗi khi tìm channel từ handle:', err)
-        return null
+    openVideo(videoId) {
+      if (videoId) {
+        const url = `https://www.youtube.com/watch?v=${videoId}`
+        window.open(url, '_blank')
       }
     },
 
     async fetchYoutubeVideos() {
       try {
-        const formattedHandle = this.defaultHandle.startsWith('@') ? this.defaultHandle : `@${this.defaultHandle}`
-        const channelId = await this.getChannelIdByHandle(formattedHandle)
-
-        if (!channelId) {
-          alert(`Không tìm thấy kênh với handle: ${this.defaultHandle}`)
-          return
-        }
-
-        const searchRes = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-          params: {
-            key: this.apiKey,
-            channelId: channelId,
-            part: 'snippet',
-            order: 'date',
-            maxResults: 50
-          }
-        })
-
-        const videoIds = searchRes.data.items
-          .filter(item => item.id.videoId)
-          .map(item => item.id.videoId)
+        // Lấy danh sách video ID từ database của bạn
+        const dbVideos = JSON.parse(localStorage.getItem("videos")) || []
+        const videoIds = dbVideos
+          .filter(video => video.platform === 'youtube')
+          .map(video => video.videoId)
           .join(',')
 
         if (!videoIds) {
@@ -177,6 +152,7 @@ export default {
           return
         }
 
+        // Lấy chi tiết của các video từ database
         const detailsRes = await axios.get('https://www.googleapis.com/youtube/v3/videos', {
           params: {
             key: this.apiKey,
@@ -185,24 +161,40 @@ export default {
           }
         })
 
-        this.videos = detailsRes.data.items.map(item => ({
-          title: item.snippet.title,
-          views: parseInt(item.statistics.viewCount || 0),
-          likes: parseInt(item.statistics.likeCount || 0),
-          comments: parseInt(item.statistics.commentCount || 0),
-          shares: 0,
-          platforms: ['YouTube']
-        }))
+        // Map dữ liệu từ API với videoId từ localStorage
+        this.videos = detailsRes.data.items.map(item => {
+          const dbVideo = dbVideos.find(v => v.videoId === item.id)
+          return {
+            title: item.snippet.title,
+            views: parseInt(item.statistics.viewCount || 0),
+            likes: parseInt(item.statistics.likeCount || 0),
+            comments: parseInt(item.statistics.commentCount || 0),
+            shares: 0,
+            platforms: ['YouTube'],
+            videoId: item.id // Thêm videoId để sử dụng cho link
+          }
+        })
+
+        // Reset về trang 1 và khởi tạo lại biểu đồ
+        this.currentPage = 1
+        await this.$nextTick()
+        this.initChart()
       } catch (err) {
         console.error('Lỗi khi tải dữ liệu video:', err)
       }
     },
 
     initChart() {
+      const dataToShow = this.paginatedVideos
+      console.log('Data for chart:', dataToShow)
+
+      if (!dataToShow || dataToShow.length === 0) {
+        console.log('Không có dữ liệu để hiển thị biểu đồ')
+        return
+      }
+
       const ctx = this.$refs.analyticsChart.getContext('2d')
       if (this.chart) this.chart.destroy()
-
-      const dataToShow = this.paginatedVideos
 
       this.chart = new Chart(ctx, {
         type: 'line',
@@ -214,7 +206,7 @@ export default {
             borderColor: 'rgba(75, 192, 192, 1)',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             tension: 0.3,
-            fill: true,
+            fill: false,
             pointRadius: 5,
             pointHoverRadius: 7
           }]
@@ -235,6 +227,18 @@ export default {
               mode: 'index',
               intersect: false
             }
+          },
+          onClick: (event, elements) => {
+            if (elements && elements.length > 0) {
+              const index = elements[0].index
+              const video = dataToShow[index]
+              if (video && video.url) {
+                window.open(video.url, '_blank')
+              }
+            }
+          },
+          onHover: (event, elements) => {
+            event.native.target.style.cursor = elements.length ? 'pointer' : 'default'
           }
         }
       })
@@ -337,6 +341,12 @@ export default {
   font-size: 12px;
   border: none;
   color: white;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.platform-button:hover {
+  opacity: 0.8;
 }
 
 .platform-button.youtube {
@@ -353,6 +363,10 @@ export default {
 
 .platform-button.facebook {
   background-color: #1877F2;
+}
+
+.platform-cell {
+  white-space: nowrap;
 }
 
 .pagination {

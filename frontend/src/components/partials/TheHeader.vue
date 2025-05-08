@@ -198,7 +198,9 @@ export default {
                   profileUrl: account.profileUrl,
                   socialId: account.socialId,
                   name: account.name,
-                  thumbnail: account.thumbnail
+                  thumbnail: account.thumbnail,
+                  accessToken: account.accessToken,
+                  refreshToken: account.refreshToken
                 }))
               }
               this.user = safeUserData
