@@ -2,7 +2,7 @@
   <DefaultLayout>
     <main class="main-content">
       <!-- Chart -->
-      <div class="analytics-container" style="margin-top:50px;">
+      <div class="analytics-container">
         <div class="analytics-graph">
           <canvas ref="analyticsChart" height="200"></canvas>
         </div>
