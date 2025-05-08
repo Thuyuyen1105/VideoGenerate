@@ -1,124 +1,95 @@
 <template>
   <DefaultLayout>
-    <!-- Main Content -->
     <main class="main-content">
-      <div class="analytics-container">
-        <!-- Analytics Graph -->
+      <!-- Chart -->
+      <div class="analytics-container" style="margin-top:50px;">
         <div class="analytics-graph">
           <canvas ref="analyticsChart" height="200"></canvas>
         </div>
 
-        <!-- Analytics Summary -->
+        <!-- Summary -->
         <div class="analytics-summary">
-          <div class="summary-item">
-            <div class="summary-value">3</div>
-            <div class="summary-label">Videos</div>
+          <div class="summary-item bg-white p-4 rounded-xl shadow">
+            <div class="summary-value text-2xl font-bold">{{ videos.length }}</div>
+            <div class="summary-label text-gray-500">Videos</div>
           </div>
-          <div class="summary-item">
-            <div class="summary-value">12m</div>
-            <div class="summary-label">Views</div>
+          <div class="summary-item bg-white p-4 rounded-xl shadow">
+            <div class="summary-value text-2xl font-bold">{{ formatNumber(totalViews) }}</div>
+            <div class="summary-label text-gray-500">Views</div>
           </div>
-          <div class="summary-item">
-            <div class="summary-value">123k</div>
-            <div class="summary-label">like</div>
+          <div class="summary-item bg-white p-4 rounded-xl shadow">
+            <div class="summary-value text-2xl font-bold">{{ formatNumber(totalLikes) }}</div>
+            <div class="summary-label text-gray-500">Likes</div>
           </div>
-          <div class="summary-item">
-            <div class="summary-value">2.1k</div>
-            <div class="summary-label">comments</div>
+          <div class="summary-item bg-white p-4 rounded-xl shadow">
+            <div class="summary-value text-2xl font-bold">{{ formatNumber(totalComments) }}</div>
+            <div class="summary-label text-gray-500">Comments</div>
           </div>
         </div>
+      </div>
 
-        <!-- Analytics Table -->
-        <div class="analytics-table-container">
-          <table class="analytics-table">
-            <thead>
-              <tr>
-                <th>Videos</th>
-                <th>
-                  <div class="table-header-with-icon">
-                    view
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  </div>
-                </th>
-                <th>
-                  <div class="table-header-with-icon">
-                    like
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  </div>
-                </th>
-                <th>
-                  <div class="table-header-with-icon">
-                    comment
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  </div>
-                </th>
-                <th>
-                  <div class="table-header-with-icon">
-                    share
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  </div>
-                </th>
-                <th>platform</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(video, index) in videos" :key="index">
-                <td>{{ video.title }}</td>
-                <td>{{ video.views }}</td>
-                <td>{{ video.likes }}</td>
-                <td>{{ video.comments }}</td>
-                <td>{{ video.shares }}</td>
-                <td class="platform-cell">
-                  <div class="platform-buttons">
-                    <button v-for="platform in video.platforms" :key="platform" class="platform-button"
-                      :class="platform.toLowerCase()">
-                      {{ platform }}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <!-- Table -->
+      <div class="analytics-table-container">
+        <table class="analytics-table">
+          <thead>
+            <tr>
+              <th>Videos</th>
+              <th>view</th>
+              <th>like</th>
+              <th>comment</th>
+              <th>share</th>
+              <th>platform</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(video, index) in paginatedVideos" :key="index">
+              <td>{{ video.title }}</td>
+              <td>{{ video.views }}</td>
+              <td>{{ video.likes }}</td>
+              <td>{{ video.comments }}</td>
+              <td>{{ video.shares }}</td>
+              <td class="platform-cell">
+                <div class="platform-buttons">
+                  <button v-for="platform in video.platforms" :key="platform" class="platform-button"
+                    :class="platform.toLowerCase()">
+                    {{ platform }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- Pagination -->
-        <div class="pagination">
-          <button class="pagination-arrow">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-          <button class="pagination-number active">1</button>
-          <button class="pagination-number">2</button>
-          <button class="pagination-number">3</button>
-          <button class="pagination-arrow">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-          </button>
-        </div>
+      <!-- Pagination -->
+      <div class="pagination mt-4 flex gap-2 justify-center">
+        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="pagination-arrow">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+
+        <button v-for="page in totalPages" :key="page" @click="changePage(page)"
+          :class="['pagination-number', { active: page === currentPage }]">
+          {{ page }}
+        </button>
+
+        <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages" class="pagination-arrow">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
       </div>
     </main>
   </DefaultLayout>
 </template>
 
 <script>
-import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import axios from 'axios'
 import Chart from 'chart.js/auto'
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 export default {
   name: 'AnalyticsView',
@@ -127,61 +98,163 @@ export default {
   },
   data() {
     return {
-      videos: [
-        {
-          title: 'Video 1',
-          views: '1.2M',
-          likes: '45K',
-          comments: '1.2K',
-          shares: '500',
-          platforms: ['YouTube', 'TikTok']
-        },
-        {
-          title: 'Video 2',
-          views: '800K',
-          likes: '30K',
-          comments: '800',
-          shares: '300',
-          platforms: ['Instagram', 'Facebook']
-        },
-        {
-          title: 'Video 3',
-          views: '500K',
-          likes: '20K',
-          comments: '500',
-          shares: '200',
-          platforms: ['YouTube', 'Instagram']
-        }
-      ]
+      videos: [],
+      chart: null,
+      defaultHandle: '@NekoGamers089', // handle mặc định ở đây
+      apiKey: 'AIzaSyDS6iN4haeWypLKvsX9u7rNNotdXPUrINQ',
+      currentPage: 1,
+      itemsPerPage: 10
     }
   },
-  mounted() {
+  computed: {
+    totalViews() {
+      return this.videos.reduce((sum, v) => sum + v.views, 0)
+    },
+    totalLikes() {
+      return this.videos.reduce((sum, v) => sum + v.likes, 0)
+    },
+    totalComments() {
+      return this.videos.reduce((sum, v) => sum + v.comments, 0)
+    },
+    totalPages() {
+      return Math.ceil(this.videos.length / this.itemsPerPage)
+    },
+    paginatedVideos() {
+      const start = (this.currentPage - 1) * this.itemsPerPage
+      return this.videos.slice(start, start + this.itemsPerPage)
+    }
+  },
+  async mounted() {
+    await this.fetchYoutubeVideos()
     this.initChart()
   },
   methods: {
+    async getChannelIdByHandle(handle) {
+      try {
+        const res = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+          params: {
+            key: this.apiKey,
+            q: handle,
+            type: 'channel',
+            part: 'snippet',
+            maxResults: 1
+          }
+        })
+        return res.data.items[0]?.snippet?.channelId || null
+      } catch (err) {
+        console.error('Lỗi khi tìm channel từ handle:', err)
+        return null
+      }
+    },
+
+    async fetchYoutubeVideos() {
+      try {
+        const formattedHandle = this.defaultHandle.startsWith('@') ? this.defaultHandle : `@${this.defaultHandle}`
+        const channelId = await this.getChannelIdByHandle(formattedHandle)
+
+        if (!channelId) {
+          alert(`Không tìm thấy kênh với handle: ${this.defaultHandle}`)
+          return
+        }
+
+        const searchRes = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+          params: {
+            key: this.apiKey,
+            channelId: channelId,
+            part: 'snippet',
+            order: 'date',
+            maxResults: 50
+          }
+        })
+
+        const videoIds = searchRes.data.items
+          .filter(item => item.id.videoId)
+          .map(item => item.id.videoId)
+          .join(',')
+
+        if (!videoIds) {
+          this.videos = []
+          return
+        }
+
+        const detailsRes = await axios.get('https://www.googleapis.com/youtube/v3/videos', {
+          params: {
+            key: this.apiKey,
+            id: videoIds,
+            part: 'snippet,statistics'
+          }
+        })
+
+        this.videos = detailsRes.data.items.map(item => ({
+          title: item.snippet.title,
+          views: parseInt(item.statistics.viewCount || 0),
+          likes: parseInt(item.statistics.likeCount || 0),
+          comments: parseInt(item.statistics.commentCount || 0),
+          shares: 0,
+          platforms: ['YouTube']
+        }))
+      } catch (err) {
+        console.error('Lỗi khi tải dữ liệu video:', err)
+      }
+    },
+
     initChart() {
       const ctx = this.$refs.analyticsChart.getContext('2d')
-      new Chart(ctx, {
+      if (this.chart) this.chart.destroy()
+
+      const dataToShow = this.paginatedVideos
+
+      this.chart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          labels: dataToShow.map(v => v.title),
           datasets: [{
             label: 'Views',
-            data: [12, 19, 3, 5, 2, 3],
-            borderColor: 'rgb(75, 192, 192)',
-            tension: 0.1
+            data: dataToShow.map(v => v.views),
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.3,
+            fill: true,
+            pointRadius: 5,
+            pointHoverRadius: 7
           }]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              display: true
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false
+            }
+          }
         }
       })
+    },
+
+    changePage(page) {
+      if (page >= 1 && page <= this.totalPages) {
+        this.currentPage = page
+        this.initChart()
+      }
+    },
+
+    formatNumber(num) {
+      if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M'
+      if (num >= 1_000) return (num / 1_000).toFixed(1) + 'K'
+      return num.toString()
     }
   }
 }
 </script>
-
 <style scoped>
 .main-content {
   padding: 20px;
