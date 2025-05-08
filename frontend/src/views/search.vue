@@ -131,12 +131,40 @@ export default {
     async generateScript() {
       this.loading = true;
       try {
-        //gửi thông tin cho crawl data
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        if (!userData || !userData.id) {
+          throw new Error('User data not found');
+        }
 
-        //CRAWL trả về jobid
-        const jobId='681ba2955bdccd397d995370'
+        const response = await fetch('https://data-management-service-production.up.railway.app/api/v1/data/crawl', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: userData.id,
+            topic: this.videoIdea,
+            sources: ["wikipedia"],
+            audience: this.selectAudience,
+            style: this.selectedTone,
+            language: this.selectedLanguage,
+            length: this.selectedLength,
+            limit: 1
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        console.log('Crawl response:', data);
         
-        this.registerForJob(jobId);
+        // Lưu job_id vào localStorage
+        localStorage.setItem('currentJobId', data.job_id);
+        
+        // Đăng ký theo dõi job với job_id từ response
+        this.registerForJob(data.job_id);
       } catch (error) {
         console.error('Failed to generate script', error);
       } finally {
@@ -167,7 +195,7 @@ export default {
     await this.fetchSuggestions();
 
     // Kết nối tới WebSocket server
-    this.socket = io('http://localhost:3005');
+    this.socket = io('https://scriptservice-production.up.railway.app');
     // Lắng nghe kết quả từ server
     this.socket.on('scriptResult', this.handleScriptResult);
   },

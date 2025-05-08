@@ -1,0 +1,14 @@
+{
+  "job_id": "string", // UUID duy nhất để theo dõi job, liên kết với các bước khác
+  // Danh sách các thiết lập voice cho từng đoạn script
+  "voice_styles": {
+    "style": "string", // Style của voice
+    "gender": "string" // Gender của voice
+  },
+  "segments": [
+    {
+      "index": "number", // Số thứ tự của đoạn script
+      "text": "string" // Nội dung đoạn script
+    }
+  ]
+}

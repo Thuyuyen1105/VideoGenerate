@@ -128,7 +128,7 @@ export default {
     // Hàm cập nhật script từ textarea
     const updateScript = async () => {
       try {
-        const response = await fetch(`http://localhost:3005/api/scripts/${scriptId}`, {
+        const response = await fetch(`https://scriptservice-production.up.railway.app/api/scripts/${scriptId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -136,9 +136,9 @@ export default {
           body: JSON.stringify({
             script: outputScript.value, // Lấy script từ textarea
 
-            jobId: "681ba2955bdccd397d995370",
+            jobId: localStorage.getItem('currentJobId'),
             scriptId: scriptId,
-            userId: "6616e1b2ac9fb8d3bfc8a4c1",
+            userId: localStorage.getItem('userId'),
 
             voiceStyle: "Standard",
             voiceGender: "FEMALE",
