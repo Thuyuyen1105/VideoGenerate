@@ -21,23 +21,30 @@
                 <!-- Style dropdown -->
                 <div class="dropdown-control" style="display: flex; flex-direction: column;">
                   <label for="style-select" style="margin-bottom: 5px;">Style:</label>
-                  <select id="style-select" class="control-select" :disabled="isPreviewing">
-                    <option value="professional">Professional</option>
-                    <option value="casual">Casual</option>
-                    <option value="energetic">Energetic</option>
+                  <select id="style-select" v-model="style" class="control-select" :disabled="isPreviewing">
+                    <option value="Professional">Professional</option>
+                    <option value="Expressive">Expressive</option>
+                    <option value="Standard">Standard</option>
                   </select>
                 </div>
 
                 <!-- Gender dropdown -->
                 <div class="dropdown-control" style="display: flex; flex-direction: column;">
                   <label for="gender-select" style="margin-bottom: 5px;">Gender:</label>
-                  <select id="gender-select" class="control-select" :disabled="isPreviewing">
-                    <option value="man">Man</option>
-                    <option value="woman">Woman</option>
+                  <select id="gender-select" v-model="gender" class="control-select" :disabled="isPreviewing">
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
                   </select>
                 </div>
                 <div>
-                  <button class="preview-button" style="margin-top: 28px;">Preview voice</button>
+                  <button 
+                    class="preview-button" 
+                    style="margin-top: 28px;"
+                    @click="handlePreviewVoice"
+                    :disabled="isPreviewing"
+                  >
+                    {{ isPreviewing ? 'Loading...' : 'Preview voice' }}
+                  </button>
                 </div>
               </div>
             </div>
@@ -110,6 +117,7 @@
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import axios from 'axios';
 
 export default {
   components: {
@@ -124,6 +132,10 @@ export default {
     const generatedImages = ref([]);
     const splitScript = ref([]); // Thêm biến splitScript
     const currentIndex = ref(0);
+    const style = ref('Professional');
+    const gender = ref('MALE');
+    const language = ref('vi-VN');
+    const audioPlayer = ref(null);
 
     // Hàm cập nhật script từ textarea
     const updateScript = async () => {
@@ -223,6 +235,73 @@ export default {
       }
     };
 
+    const handlePreviewVoice = async () => {
+      try {
+        isPreviewing.value = true;
+        const token = localStorage.getItem('token'); // Lấy token từ localStorage
+        
+        if (!token) {
+          throw new Error('Authentication token not found. Please login again.');
+        }
+
+        const response = await axios.get('https://voice-generator-service-production.up.railway.app/api/voice/preview', {
+          params: {
+            style: style.value,
+            gender: gender.value,
+            language: language.value
+          },
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.data.success) {
+          // Create audio element if it doesn't exist
+          if (!audioPlayer.value) {
+            audioPlayer.value = new Audio();
+          }
+          
+          // Set the source and play
+          audioPlayer.value.src = response.data.sampleUrl;
+          await audioPlayer.value.play();
+        }
+      } catch (error) {
+        console.error('Error previewing voice:', error);
+        let errorMessage = 'Failed to preview voice. ';
+        
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          switch (error.response.status) {
+            case 400:
+              errorMessage += 'Invalid parameters. Please check your style, gender, and language settings.';
+              break;
+            case 401:
+              errorMessage += 'Authentication failed. Please login again.';
+              break;
+            case 404:
+              errorMessage += 'Voice preview service not found.';
+              break;
+            case 500:
+              errorMessage += 'Server error. Please try again later.';
+              break;
+            default:
+              errorMessage += error.response.data?.message || 'Please try again.';
+          }
+        } else if (error.request) {
+          // The request was made but no response was received
+          errorMessage += 'No response from server. Please check your internet connection.';
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          errorMessage += error.message || 'Please try again.';
+        }
+        
+        alert(errorMessage);
+      } finally {
+        isPreviewing.value = false;
+      }
+    };
+
     onMounted(async () => {
       if (scriptId) {
         // Fetch script nếu cần thiết
@@ -256,6 +335,11 @@ export default {
       splitScript, // Trả về splitScript để sử dụng trong template
       isPreviewing,
       previewImages,
+      style,
+      gender,
+      language,
+      audioPlayer,
+      handlePreviewVoice,
     };
   },
 };
