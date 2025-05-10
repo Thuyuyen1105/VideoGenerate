@@ -72,28 +72,36 @@
         </div>
 
           <!-- Image Grid -->
-        <div class="image-grid" v-if="isPreviewing">
-          <div class="image-item" v-for="(image, index) in generatedImages" :key="index">
-            <!-- Hiển thị ảnh -->
-            <img :src="image.imageUrl" alt="Generated Image" class="generated-image" />
+          <div class="image-grid" v-if="isPreviewing">
+            <div class="image-item" v-for="(image, index) in generatedImages" :key="index">
+              <!-- Hiển thị ảnh nếu có, nếu không hiển thị placeholder -->
+              <img 
+                v-if="image.imageUrl" 
+                :src="image.imageUrl" 
+                alt="Generated Image" 
+                class="generated-image" 
+              />
+              <div v-else class="image-placeholder">
+                <p>Loading image...</p>
+              </div>
 
-            <!-- Hiển thị đoạn script tương ứng -->
-            <div class="text-input-container">
-              <textarea 
-                class="text-input" 
-                rows="5" 
-                :value="image.text || ''" 
-                readonly
-              ></textarea>
-            </div>
+              <!-- Hiển thị đoạn script tương ứng -->
+              <div class="text-input-container">
+                <textarea 
+                  class="text-input" 
+                  rows="5" 
+                  :value="image.text || ''" 
+                  readonly
+                ></textarea>
+              </div>
 
-            <!-- Các nút điều khiển -->
-            <div class="image-controls">
-              <button class="regenerate-button" @click="regenerateImage(image)">Regenerate</button>
-              <button class="edit-button" @click="goToImageEditor(image.imageUrl)">Edit</button>
+              <!-- Các nút điều khiển -->
+              <div class="image-controls">
+                <button class="regenerate-button" @click="regenerateImage(image)">Regenerate</button>
+                <button class="edit-button" @click="goToImageEditor(image.imageUrl)">Edit</button>
+              </div>
             </div>
           </div>
-        </div>
 
           <!-- Navigation -->
           <div class="navigation-controls" v-if="isPreviewing">
@@ -249,6 +257,11 @@ const pollJobStatus = async (jobId, interval = 2000, maxAttempts = 300) => {
         isLoading.value = true; // Bắt đầu trạng thái loading
         await updateScript(); // Cập nhật script trước
         await fetchSplitScript(); // Lấy danh sách splitScript
+        generatedImages.value = splitScript.value.map((script) => ({
+          ...script,
+          imageUrl: null, // Tạm thời chưa có ảnh
+        }));
+        isPreviewing.value = true; // Hiển thị giao diện với splitScript
 
         const jobId = localStorage.getItem('currentJobId');
         const images = await pollJobStatus(jobId); // Kiểm tra trạng thái job
@@ -272,6 +285,7 @@ const pollJobStatus = async (jobId, interval = 2000, maxAttempts = 300) => {
         isLoading.value = false; // Kết thúc trạng thái loading
       }
     };
+
     const handlePreviewVoice = async () => {
       try {
         isPreviewing.value = true;
